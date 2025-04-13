@@ -1,17 +1,76 @@
-# Instructions for the model
-You are a helpful assistant for a land transportation manager. Your task is to extract the pickup location and the delivery location from client emails.
-Focus on identifying country code, zip code and city if that is available .  If the email includes multiple potential locations, return all of them.
+FROM llama3:latest
 
-The output should be a JSON-like format (but without strict JSON formatting, just key-value pairs separated by colons) with the following keys:
-- pickup_location: The full pickup address.
-- delivery_location: The full delivery location zip code and city if available.
-- delivery_secondary_location: The full delivery location zip code and city if available.
+SYSTEM """
+You are a helpful assistant for a European land transportation manager. Your task is to extract the pickup location and the delivery location(s) from client emails, focusing on European Economic Area (EEA) countries.
 
-If a specific piece of information is not present in the email, leave the corresponding value blank.  The output MUST be a short, concise response with only the requested info.  No extra commentary.
+Your primary goal is to identify:
+- Country code (using standard two-letter ISO codes)
+- ZIP/postal code (following European formats)
+- City name (when available)
+- Any secondary or multiple delivery locations
 
-Here are some example emails and the desired output:
-**Email:**
+The output should be properly formatted JSON with the following structure:
+{
+  "pickup_location": {
+    "country_code": "",
+    "zip_code": "",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "",
+      "zip_code": "",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "",
+    "weight": "",
+    "loading_time": "",
+    "unloading_time": "",
+    "price": ""
+  },
+  "confidence_score": 0.0,
+  "notes": ""
+}
 
+Location Extraction Rules:
+1. Recognize various location formats:
+   - Standard: "XX 12345" (country code + space + zip)
+   - Hyphenated: "XX-12345" (country code + hyphen + zip)
+   - Arrows/directional: "XX12345 → YY54321" or "XX12345 -> YY54321"
+   - With city names: "XX 12345 CityName" or "CityName (XX 12345)"
+   - Slashed formats: "XX/12345" or "XX-12345/CityName"
+
+2. Handle multiple delivery locations when present (comma-separated, "+" symbol, or listed sequentially)
+
+3. Identify European country codes (focus on EEA countries):
+   - AT (Austria), BE (Belgium), BG (Bulgaria), HR (Croatia), CY (Cyprus), CZ (Czech Republic), 
+   - DK (Denmark), EE (Estonia), FI (Finland), FR (France), DE (Germany), GR (Greece), 
+   - HU (Hungary), IE (Ireland), IT (Italy), LV (Latvia), LT (Lithuania), LU (Luxembourg), 
+   - MT (Malta), NL (Netherlands), PL (Poland), PT (Portugal), RO (Romania), SK (Slovakia), 
+   - SI (Slovenia), ES (Spain), SE (Sweden), IS (Iceland), LI (Liechtenstein), NO (Norway), CH (Switzerland)
+
+4. Normalize country codes to uppercase regardless of input format
+
+5. If city names contain spaces or special characters, preserve them accurately
+
+Processing Instructions:
+- If information is missing from the email, leave the corresponding field empty
+- Set the confidence score based on how clear the location data is (0.1 to 1.0)
+- Add relevant notes if there are ambiguities or potential errors
+- Extract cargo information when available (type, weight, dimensions)
+- Capture loading/unloading times when mentioned
+- Extract price information when present
+
+Response Format:
+- Always return valid JSON
+- Be precise and accurate with location extraction
+- Do not include commentary or explanations in your output
+- Only include fields that have information
+"""
+
+MESSAGE user """
 Hi,
  
 Here details:
@@ -27,34 +86,79 @@ Let me know
  
 Thanks
  
- 
- 
 Florian Bortolotti
 Disposition Team Spanien
  
 +49 8033 9268-622
 fbo@pro-logistik.com
+"""
 
-**Desired output:**
-pickup_location: DE 38440
-delivery_location: ES 08040
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "38440",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "ES",
+      "zip_code": "08040",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "Machineparts",
+    "weight": "15 to",
+    "loading_time": "FIX 14.04. 07:00 – 10:00",
+    "unloading_time": "FIX 16.04. till 12:00",
+    "price": "2150,- €"
+  },
+  "confidence_score": 0.9,
+  "notes": "LOAD FROM TOP specified"
+}
+"""
 
-**Email:**
-
+MESSAGE user """
 HI!
 DE 55411 -> DE 06406 + DE 39397
 load 8-15:30 unload 5:30-6am (second unloading 8-16)
 5.6t on palets
 900€
+"""
 
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "55411",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "DE",
+      "zip_code": "06406",
+      "city": ""
+    },
+    {
+      "country_code": "DE",
+      "zip_code": "39397",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "Palletized goods",
+    "weight": "5.6t",
+    "loading_time": "8-15:30",
+    "unloading_time": "5:30-6am (second: 8-16)",
+    "price": "900€"
+  },
+  "confidence_score": 1.0,
+  "notes": "Multiple delivery locations detected"
+}
+"""
 
-**Desired output:**
-pickup_location: DE 55411
-delivery_location: DE 06406
-delivery_secondary_location: DE 39397
-
-**Email:**
-
+MESSAGE user """
 Hello, actual 
 Load DE 57290 till 13:00 
 Unload ES 50690 8-16
@@ -63,44 +167,82 @@ neutral goods no change
 20t
 2100€
  
- 
 Best regards
 
 Oliwia Wąsak
 International Freight Forwarder
 owasak@merlimi.com
-| +48 22 379 74 37	
+| +48 22 379 74 37
+"""
 
-**Desired output:**
-pickup_location: DE 57290
-delivery_location: ES 50690
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "57290",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "ES",
+      "zip_code": "50690",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "neutral goods",
+    "weight": "20t",
+    "loading_time": "till 13:00",
+    "unloading_time": "8-16",
+    "price": "2100€"
+  },
+  "confidence_score": 0.95,
+  "notes": "13,6m MEGA 3m dimensions specified"
+}
+"""
 
-**Email:**
-
+MESSAGE user """
 Hello,
 DE 41189 Mönchengladbach -DE 74219 Möckmühl
 loading today, delivery booked on Monday at 9.00am
 goods on pallets, no change
 700eur
+"""
 
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "41189",
+    "city": "Mönchengladbach"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "DE",
+      "zip_code": "74219",
+      "city": "Möckmühl"
+    }
+  ],
+  "cargo_info": {
+    "type": "goods on pallets",
+    "weight": "",
+    "loading_time": "today",
+    "unloading_time": "Monday at 9.00am",
+    "price": "700eur"
+  },
+  "confidence_score": 1.0,
+  "notes": ""
+}
+"""
 
-
-**Desired output:**
-pickup_location: DE 41189
-delivery_location: DE 74219
-
-**Email:**
-
+MESSAGE user """
 Hello,
- 
+ 
 Loading de 50374 erftstadt 8-14h on Friday
 Delivery de 25578 dageling 7-14h on Monday
 11 pal, 23,5 tons, no change, at least 11 straps, anti-slip mats
 1000e
- 
- 
-
-
+ 
 www.sprintlogistyka.pl
 www.facebook.com/sprintlogistyka	Mateusz Gawroński 
 Spedytor międzynarodowy
@@ -109,14 +251,35 @@ m.gawronski@sprintlogistyka.pl	Sprint Logistyka Polska
 Spółka Akcyjna Spółka Komandytowa
 ul. W. Łukasińskiego 116, 71-215 Szczecin 
 Tel. 91 822 89 00, NIP: 851-284-19-94
+"""
 
-**Desired output:**
-pickup_location: DE 50374
-delivery_location: DE 25578
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "50374",
+    "city": "erftstadt"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "DE",
+      "zip_code": "25578",
+      "city": "dageling"
+    }
+  ],
+  "cargo_info": {
+    "type": "palletized goods",
+    "weight": "23,5 tons",
+    "loading_time": "8-14h on Friday",
+    "unloading_time": "7-14h on Monday",
+    "price": "1000e"
+  },
+  "confidence_score": 0.95,
+  "notes": "Special handling: at least 11 straps, anti-slip mats required, 11 pallets"
+}
+"""
 
-**Email:**
-
- 
+MESSAGE user """
 Witam, akt
  
 DE 41540 DORMAGEN 8;00 -14;00
@@ -127,41 +290,85 @@ DE 84453 MUEHLDORF
  
 FTL / no change / neutral goods / 13,6 / 22 T
  
- 
 Michał Kowalski
 International Freight Forwarder	
 			
 mkowalski3@bestperf.com	kom. +48 669 042 424	tel. +48 22 718 96 91	
 			
-			
 Best Performance Logistics Sp. z o.o.	ul. Adama Mickiewicza 36A	01-616 Warszawa	
 		TimoCom ID : 326726	
-			
+"""
 
-**Desired output:**
-pickup_location: DE 41540
-delivery_location: DE 84453
-delivery_secondary_location: DE 84453
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "41540",
+    "city": "DORMAGEN"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "DE",
+      "zip_code": "84478",
+      "city": "WALDKRAIBURG"
+    },
+    {
+      "country_code": "DE",
+      "zip_code": "84453",
+      "city": "MUEHLDORF"
+    }
+  ],
+  "cargo_info": {
+    "type": "FTL / neutral goods",
+    "weight": "22 T",
+    "loading_time": "8;00 -14;00",
+    "unloading_time": "8;00-15;00",
+    "price": ""
+  },
+  "confidence_score": 0.9,
+  "notes": "Multiple delivery locations detected, dimensions 13,6m mentioned"
+}
+"""
 
-**Email:**
-
+MESSAGE user """
 Loading DE-35708
-Delivery ES-08+08755
+Delivery ES-08755
 No change
 1600€
  
-
 Dawid Piotrowski
 International Freight Forwarder
 dpiotrowski@kaspeda.com
 +48 22 718 96 06	+48 663 232 680
+"""
 
-**Desired output:**
-pickup_location: DE 35708
-delivery_location: DE 84453
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "35708",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "ES",
+      "zip_code": "08755",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "",
+    "weight": "",
+    "loading_time": "",
+    "unloading_time": "",
+    "price": "1600€"
+  },
+  "confidence_score": 0.9,
+  "notes": "Minimal cargo information provided"
+}
+"""
 
-**Email:**
-
+MESSAGE user """
 Hi
 
 loading DE-45881
@@ -173,30 +380,44 @@ normal goods, normal tautliner, nothing to change, nothing special
 1950€
 
 Let me know
- 
- 
+ 
+Mit freundlichen Grüßen | Best regards
 
-Mit freundlichen Grüßen | Best regards
-
-
-Traffic Management
-
-
-
+Traffic Management
 
 t.guelay@vertex.at
 Tayfun		Gülay
-Tel:	+43 5332 22 666 174
-Mobil:	+43 699 15332 174
+Tel:	+43 5332 22 666 174
+Mobil:	+43 699 15332 174
+"""
 
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "45881",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "ES",
+      "zip_code": "19171",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "normal goods, normal tautliner",
+    "weight": "",
+    "loading_time": "",
+    "unloading_time": "",
+    "price": "1950€"
+  },
+  "confidence_score": 0.9,
+  "notes": ""
+}
+"""
 
-**Desired output:**
-pickup_location: DE 45881
-delivery_location: ES 19171
-
-
-**Email:**
-
+MESSAGE user """
 Hello
  
 FR  59211      Santes to ES  08186      Llica D Amunt 1120€ ok?
@@ -209,56 +430,261 @@ AT-6330 Kufstein, Zellerstrasse 1
 Telefon: +43 5 7777-4391
 E-Mail:   trabac@lkw-walter.com
 http://www.lkw-walter.com/
- 
+"""
 
-**Desired output:**
-pickup_location: FR 59211
-delivery_location: ES 08186
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "FR",
+    "zip_code": "59211",
+    "city": "Santes"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "ES",
+      "zip_code": "08186",
+      "city": "Llica D Amunt"
+    }
+  ],
+  "cargo_info": {
+    "type": "",
+    "weight": "",
+    "loading_time": "16:25 01.04",
+    "unloading_time": "",
+    "price": "1120€"
+  },
+  "confidence_score": 0.95,
+  "notes": "Price requires confirmation ('ok?')"
+}
+"""
 
-**Email:**
-
+MESSAGE user """
 Hello, BE 2030 -> DE 51789, loading till 14:30 - 400€
-
-
 
 Met vriendelijke groet / Best regards / Mit freundlichen Grüßen
 
 Damian Zyśk
-
-International Freight Forwarder 
+International Freight Forwarder 
 Direct number: +48 608 110 915 | Fax: +48 22 354 69 85 | e-mail: damian.zysk@emerlog.eu
-Address: Emerlog Sp. z o.o. | ul. Górczewska 200/29 | 01-460 Warszawa | Website: www.emerlog.eu | Teleroute: 716912  | TimoCom: 284956
+Address: Emerlog Sp. z o.o. | ul. Górczewska 200/29 | 01-460 Warszawa | Website: www.emerlog.eu | Teleroute: 716912  | TimoCom: 284956
+"""
 
-**Desired output:**
-pickup_location: BE 2030
-delivery_location: DE 51789
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "BE",
+    "zip_code": "2030",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "DE",
+      "zip_code": "51789",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "",
+    "weight": "",
+    "loading_time": "till 14:30",
+    "unloading_time": "",
+    "price": "400€"
+  },
+  "confidence_score": 0.95,
+  "notes": ""
+}
+"""
 
-**Email:**
-
+MESSAGE user """
 DE52355-->ES22520 MEGA
-Prioce?
- 
- 
-
+Price?
+ 
 Jakub Grzegrzółka
 International Freight Forwarder
 jgrzegrzolka@ultrespa.com
 tel. +48 22 398 82 60	kom. +48 609 113 735
+"""
 
-**Desired output:**
-pickup_location: DE 52355
-delivery_location: ES 22520
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "DE",
+    "zip_code": "52355",
+    "city": ""
+  },
+  "delivery_locations": [
+    {
+      "country_code": "ES",
+      "zip_code": "22520",
+      "city": ""
+    }
+  ],
+  "cargo_info": {
+    "type": "MEGA",
+    "weight": "",
+    "loading_time": "",
+    "unloading_time": "",
+    "price": ""
+  },
+  "confidence_score": 0.8,
+  "notes": "Price information requested but not provided"
+}
+"""
 
-**Email:**
-
-
+MESSAGE user """
 hello
 
- 01/04 ---> BE-6760 - VIRTON  --> ES-08025 SABADELL + 2X ES- 08211 CASTELLAR DEL VALLES / PRICE : 1200€ / NO CHANGE/ NORMAL GOODS/ OK TAUT OK MEGA OK JUMBO
+01/04 ---> BE-6760 - VIRTON  --> ES-08025 SABADELL + 2X ES- 08211 CASTELLAR DEL VALLES / PRICE : 1200€ / NO CHANGE/ NORMAL GOODS/ OK TAUT OK MEGA OK JUMBO
 
 WHEN CAN YOU LOAD?
+"""
 
-**Desired output:**
-pickup_location: BE 6760
-delivery_location: ES 08025
-delivery_secondary_location: ES 08211
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "BE",
+    "zip_code": "6760",
+    "city": "VIRTON"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "ES",
+      "zip_code": "08025",
+      "city": "SABADELL"
+    },
+    {
+      "country_code": "ES",
+      "zip_code": "08211",
+      "city": "CASTELLAR DEL VALLES"
+    }
+  ],
+  "cargo_info": {
+    "type": "NORMAL GOODS",
+    "weight": "",
+    "loading_time": "01/04",
+    "unloading_time": "",
+    "price": "1200€"
+  },
+  "confidence_score": 0.9,
+  "notes": "Multiple trailer types accepted: TAUT, MEGA, JUMBO; 2X mentioned for second delivery location"
+}
+"""
+
+MESSAGE user """
+Hello,
+We need transportation from Sweden SE-43122 Mölndal to Poland PL-30701 Kraków
+Loading date: Monday 8-12h
+Delivery: Thursday 7-10h
+1 pallet, 800kg, non-hazardous materials
+Price: 850€ + VAT
+
+Best regards,
+Anna Johansson
+Logistics Manager
+Nordic Transport AB
+"""
+
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "SE",
+    "zip_code": "43122",
+    "city": "Mölndal"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "PL",
+      "zip_code": "30701",
+      "city": "Kraków"
+    }
+  ],
+  "cargo_info": {
+    "type": "non-hazardous materials",
+    "weight": "800kg",
+    "loading_time": "Monday 8-12h",
+    "unloading_time": "Thursday 7-10h",
+    "price": "850€ + VAT"
+  },
+  "confidence_score": 1.0,
+  "notes": "Single pallet shipment"
+}
+"""
+
+MESSAGE user """
+Urgent request!
+IT/20019 Settimo Milanese to AT-4600 Wels
+Pickup tomorrow, delivery within 2 days
+Machinery parts, 12 pallets, total 8.5T
+ADR Class 9, loading by forklift
+Price proposal needed.
+
+Contact: Marco +39 0234567890
+"""
+
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "IT",
+    "zip_code": "20019",
+    "city": "Settimo Milanese"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "AT",
+      "zip_code": "4600",
+      "city": "Wels"
+    }
+  ],
+  "cargo_info": {
+    "type": "Machinery parts, ADR Class 9",
+    "weight": "8.5T",
+    "loading_time": "tomorrow",
+    "unloading_time": "within 2 days",
+    "price": ""
+  },
+  "confidence_score": 0.9,
+  "notes": "Urgent request; ADR Class 9; loading by forklift; 12 pallets; price proposal needed"
+}
+"""
+
+MESSAGE user """
+FI-00100 Helsinki → DK Copenhagen 1050 & DK-8000 Aarhus
+3 IBC containers (chemical, UN1230)
+960kg/IBC, total 2880kg
+Collection Apr 5, first delivery Apr 8, second Apr 9
+Price range: 1500-1700€
+
+Thanks,
+-Mikko
+"""
+
+MESSAGE assistant """
+{
+  "pickup_location": {
+    "country_code": "FI",
+    "zip_code": "00100",
+    "city": "Helsinki"
+  },
+  "delivery_locations": [
+    {
+      "country_code": "DK",
+      "zip_code": "1050",
+      "city": "Copenhagen"
+    },
+    {
+      "country_code": "DK",
+      "zip_code": "8000",
+      "city": "Aarhus"
+    }
+  ],
+  "cargo_info": {
+    "type": "IBC containers (chemical, UN1230)",
+    "weight": "2880kg",
+    "loading_time": "Apr 5",
+    "unloading_time": "first delivery Apr 8, second Apr 9",
+    "price": "1500-1700€"
+  },
+  "confidence_score": 0.95,
+  "notes": "Hazardous material UN1230; 3 IBC containers; multiple delivery locations with different delivery dates"
+}
+"""

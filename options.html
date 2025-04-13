@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webmail Mailto Handler Options</title>
+    <style>
+        body { font-family: sans-serif; padding: 15px; min-width: 250px; }
+        label { display: block; margin: 10px 0; }
+        button { margin-top: 15px; padding: 8px 15px; }
+        #status { margin-top: 10px; color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Webmail Mailto Handler Settings</h2>
+    <p>Choose your preferred webmail service:</p>
+
+    <form id="optionsForm">
+        <label>
+            <input type="radio" name="provider" value="gmail"> Gmail
+        </label>
+        <label>
+            <input type="radio" name="provider" value="outlook"> Outlook.com / Office 365 Web
+        </label>
+        <label>
+            <input type="radio" name="provider" value="yahoo"> Yahoo Mail
+        </label>
+         <!-- You could add an option to disable the handler -->
+         <!--
+         <label>
+            <input type="radio" name="provider" value="disabled"> Disable (Use System Default)
+         </label>
+         -->
+
+        <button type="submit">Save Settings</button>
+    </form>
+
+    <div id="status"></div>
+
+    <script src="options.js"></script>
+</body>
+</html>
