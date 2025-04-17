@@ -29,11 +29,11 @@ export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 CONTAINER_FIRST_STARTUP="CONTAINER_FIRST_STARTUP"
 if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     touch /$CONTAINER_FIRST_STARTUP
+
     docker cp /Modelfile $CONTAINER_ID:/Modelfile$BUILD_TIMESTAMP
+    
+    docker exec -i $CONTAINER_ID ollama create kaa-train$BUILD_TIMESTAMP -f /Modelfile$BUILD_TIMESTAMP
     docker exec -i $CONTAINER_ID ollama list
-    docker exec -i $CONTAINER_ID ls -la
-    #docker exec -i $CONTAINER_ID "$COMMAND"
-    #docker exec -i "$CONTAINER_ID" "ollama create kaa-train$BUILD_TIMESTAMP -f /Modelfile$BUILD_TIMESTAMP"
 
     echo "First run"
 else
