@@ -24,11 +24,18 @@ export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 # Execute the command in the target container
 ls -la /usr/local/bin
 
-docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/usr/local/bin/Modelfile$BUILD_TIMESTAMP
-docker exec -i $CONTAINER_ID "pwd"
+# This script checks if the container is started for the first time.
 
-docker exec -i "$CONTAINER_ID" "ollama create KAA-Train-$BUILD_TIMESTAMP -f /usr/local/bin/Modelfile$BUILD_TIMESTAMP"
+CONTAINER_FIRST_STARTUP="CONTAINER_FIRST_STARTUP"
+if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
+    touch /$CONTAINER_FIRST_STARTUP
+    docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/usr/local/bin/Modelfile$BUILD_TIMESTAMP
+    docker exec -i $CONTAINER_ID "pwd"
 
-echo "Model created naujas"
+    docker exec -i "$CONTAINER_ID" "ollama create KAA-Train-$BUILD_TIMESTAMP -f /usr/local/bin/Modelfile$BUILD_TIMESTAMP"
 
-exit 1
+    echo "First run"
+else
+    # script that should run the rest of the times (instances where you 
+    echo "running"
+fi
