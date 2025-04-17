@@ -22,6 +22,10 @@ export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 #Rename Modelfile
 
 # Execute the command in the target container
-docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/Modelfile$BUILD_TIMESTAMP
-docker exec "$CONTAINER_ID" "ollama create KAA-Train-$BUILD_TIMESTAMP -f /Modelfile$BUILD_TIMESTAMP"
+docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/usr/local/bin/Modelfile$BUILD_TIMESTAMP
+pwd
+docker exec "$CONTAINER_ID" "pwd"
+docker exec "$CONTAINER_ID" "ls -la /usr/bin"
+
+docker exec "$CONTAINER_ID" "ollama create KAA-Train-$BUILD_TIMESTAMP -f /usr/local/bin/Modelfile$BUILD_TIMESTAMP"
 echo "Model created"
