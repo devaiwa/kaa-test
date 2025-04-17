@@ -30,3 +30,5 @@ docker exec -i $CONTAINER_ID "pwd"
 docker exec -i "$CONTAINER_ID" "ollama create KAA-Train-$BUILD_TIMESTAMP -f /usr/local/bin/Modelfile$BUILD_TIMESTAMP"
 
 echo "Model created naujas"
+
+exit 1
