@@ -20,6 +20,9 @@ fi
 export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 
 #Rename Modelfile
+pwd
+ls -la
+pwd
 
 # Execute the command in the target container
 #ls -la /usr/local/bin
