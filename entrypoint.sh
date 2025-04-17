@@ -32,8 +32,8 @@ if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/usr/bin/Modelfile$BUILD_TIMESTAMP
     docker exec -i $CONTAINER_ID "pwd"
     #docker exec -i $CONTAINER_ID "ollama list"
-    docker exec -i $CONTAINER_ID sh /
-    ls -la /usr/bin | grep ModelFile /
+    docker exec -i $CONTAINER_ID sh 
+    ls -la /usr/bin | grep ModelFile
     exit 
     #docker exec -i "$CONTAINER_ID" "ollama create kaa-train$BUILD_TIMESTAMP -f /Modelfile$BUILD_TIMESTAMP"
 
