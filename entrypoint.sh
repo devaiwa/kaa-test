@@ -24,7 +24,6 @@ export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 # Execute the command in the target container
 docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/usr/local/bin/Modelfile$BUILD_TIMESTAMP
 docker exec -it "$CONTAINER_ID" "pwd"
-docker exec -it "$CONTAINER_ID" "ls -la /usr/bin"
-
+docker exec -it "$CONTAINER_ID" "ls -la"
 docker exec -it "$CONTAINER_ID" "ollama create KAA-Train-$BUILD_TIMESTAMP -f /usr/local/bin/Modelfile$BUILD_TIMESTAMP"
-echo "Model created"
+echo "Model created naujas"
