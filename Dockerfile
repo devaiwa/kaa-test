@@ -1,4 +1,4 @@
-FROM debian:latest
+FROM ubuntu:latest
 # Install necessary tools for inter-container communication and execution
 RUN apt-get update && apt-get install -y \
     docker.io \
