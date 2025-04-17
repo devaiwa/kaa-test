@@ -1,0 +1,18 @@
+version: "3.9" # Use a supported version of Docker Compose
+
+services:
+  executor:
+    build:
+      context: . # Assumes your Dockerfile is in the current directory
+      dockerfile: Dockerfile
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Mount the Docker socket
+    # Add any environment variables your application needs
+    # environment:
+    #   - MY_VARIABLE=my_value
+    # If your application needs to expose any ports, add them here
+    # ports:
+    #   - "8080:8080"
+    # Define any dependencies on other services here
+    # depends_on:
+    #   - other_service
