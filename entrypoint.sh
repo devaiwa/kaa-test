@@ -20,9 +20,6 @@ fi
 export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 
 #Rename Modelfile
-pwd
-ls -la
-pwd
 
 # Execute the command in the target container
 #ls -la /usr/local/bin
@@ -34,9 +31,7 @@ if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/Modelfile
     docker exec -i $CONTAINER_ID "pwd"
     #docker exec -i $CONTAINER_ID "ollama list"
-    docker exec -i $CONTAINER_ID sh 
-    ls -la
-    exit 
+    docker exec -i $CONTAINER_ID sh && ls -la 
     #docker exec -i "$CONTAINER_ID" "ollama create kaa-train$BUILD_TIMESTAMP -f /Modelfile$BUILD_TIMESTAMP"
 
     echo "First run"
