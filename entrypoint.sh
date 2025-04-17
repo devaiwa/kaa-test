@@ -22,14 +22,13 @@ export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 #Rename Modelfile
 
 # Execute the command in the target container
-ls -la /usr/local/bin
-
+#ls -la /usr/local/bin
 # This script checks if the container is started for the first time.
 
 CONTAINER_FIRST_STARTUP="CONTAINER_FIRST_STARTUP"
 if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     touch /$CONTAINER_FIRST_STARTUP
-    docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/usr/bin/Modelfile$BUILD_TIMESTAMP
+    docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/Modelfile
     docker exec -i $CONTAINER_ID "pwd"
     #docker exec -i $CONTAINER_ID "ollama list"
     docker exec -i $CONTAINER_ID sh 
