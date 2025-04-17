@@ -8,6 +8,7 @@
 
 TARGET_CONTAINER_NAME="ollama-api-xkcck04cwo0g8ocog8cswwkg"
 #COMMAND_TO_EXECUTE="$2"
+COMMAND="ollama list"
 
 # Get the container ID
 CONTAINER_ID=$(docker ps -a -qf "name=$TARGET_CONTAINER_NAME")
@@ -31,7 +32,7 @@ if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/Modelfile
     docker exec -i $CONTAINER_ID "pwd"
     #docker exec -i $CONTAINER_ID "ollama list"
-    docker exec -i $CONTAINER_ID sh && ollama list 
+    docker exec -i $CONTAINER_ID "$COMMAND"
     #docker exec -i "$CONTAINER_ID" "ollama create kaa-train$BUILD_TIMESTAMP -f /Modelfile$BUILD_TIMESTAMP"
 
     echo "First run"
