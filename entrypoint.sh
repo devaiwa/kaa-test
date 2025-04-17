@@ -29,7 +29,7 @@ export BUILD_TIMESTAMP="$(cat /build-timestamp)"
 CONTAINER_FIRST_STARTUP="CONTAINER_FIRST_STARTUP"
 if [ ! -e /$CONTAINER_FIRST_STARTUP ]; then
     touch /$CONTAINER_FIRST_STARTUP
-    docker cp /usr/local/bin/Modelfile $CONTAINER_ID:/Modelfile
+    sudo docker cp /Modelfile $CONTAINER_ID:/Modelfile
     docker exec -i $CONTAINER_ID "pwd"
     #docker exec -i $CONTAINER_ID "ollama list"
     docker exec -i $CONTAINER_ID "$COMMAND"
