@@ -14,7 +14,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 #Run date 
 RUN date +_%m_%d_%H_%M > /build-timestamp
 
-COPY Modelfile /usr/local/bin/Modelfile
+COPY Modelfile /Modelfile
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
